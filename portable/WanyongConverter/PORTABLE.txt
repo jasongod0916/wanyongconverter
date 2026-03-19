@@ -1,0 +1,12 @@
+﻿萬用轉檔王
+
+This is a fully bundled portable build.
+
+Included tools
+- tools\ffmpeg\ffmpeg.exe
+- tools\pandoc\pandoc.exe
+
+Usage
+1. Run WanyongConverter.exe
+2. Move the whole folder to another Windows PC if needed
+3. Delete the whole folder to remove the app

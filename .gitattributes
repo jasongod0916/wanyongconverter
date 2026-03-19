@@ -1,0 +1,2 @@
+tools/pandoc/pandoc.exe filter=lfs diff=lfs merge=lfs -text
+portable/WanyongConverter/tools/pandoc/pandoc.exe filter=lfs diff=lfs merge=lfs -text
