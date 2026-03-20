@@ -57,6 +57,20 @@ VIDEO_INPUTS = {
 VIDEO_OUTPUTS = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.mp3', '.wav', '.aac', '.flac', '.ogg', '.m4a', '.gif']
 PANDOC_OUTPUTS = {'.docx', '.odt', '.epub', '.rtf', '.html', '.txt', '.md'}
 DOCUMENT_OUTPUTS = sorted(PANDOC_OUTPUTS | {'.pdf'})
+# 這份表是根據目前本機圖片矩陣測試「實際成功」的組合整理出來的。
+# 不是看 Pillow 註冊了什麼就全放，而是只把真的成功過的目標格式列進來。
+IMAGE_OUTPUTS_BY_SOURCE = {
+    '.png': ['.apng', '.avif', '.avifs', '.bmp', '.bw', '.dds', '.dib', '.gif', '.icb', '.icns', '.ico', '.im', '.j2c', '.j2k', '.jfif', '.jp2', '.jpc', '.jpe', '.jpeg', '.jpf', '.jpg', '.jpx', '.mpo', '.msp', '.pbm', '.pcx', '.pdf', '.pfm', '.pgm', '.pnm', '.ppm', '.qoi', '.rgb', '.rgba', '.sgi', '.tga', '.tif', '.tiff', '.vda', '.vst', '.webp', '.xbm'],
+    '.jpg': ['.apng', '.avif', '.avifs', '.bmp', '.bw', '.dds', '.dib', '.gif', '.icb', '.icns', '.ico', '.im', '.j2c', '.j2k', '.jfif', '.jp2', '.jpc', '.jpe', '.jpeg', '.jpf', '.jpx', '.mpo', '.msp', '.pbm', '.pcx', '.pdf', '.pfm', '.pgm', '.png', '.pnm', '.ppm', '.qoi', '.rgb', '.rgba', '.sgi', '.tga', '.tif', '.tiff', '.vda', '.vst', '.webp', '.xbm'],
+    '.jpeg': ['.apng', '.avif', '.avifs', '.bmp', '.bw', '.dds', '.dib', '.gif', '.icb', '.icns', '.ico', '.im', '.j2c', '.j2k', '.jfif', '.jp2', '.jpc', '.jpe', '.jpeg', '.jpf', '.jpx', '.mpo', '.msp', '.pbm', '.pcx', '.pdf', '.pfm', '.pgm', '.png', '.pnm', '.ppm', '.qoi', '.rgb', '.rgba', '.sgi', '.tga', '.tif', '.tiff', '.vda', '.vst', '.webp', '.xbm'],
+    '.bmp': ['.apng', '.avif', '.avifs', '.bw', '.dds', '.dib', '.gif', '.icb', '.icns', '.ico', '.im', '.j2c', '.j2k', '.jfif', '.jp2', '.jpc', '.jpe', '.jpeg', '.jpf', '.jpg', '.jpx', '.mpo', '.msp', '.pbm', '.pcx', '.pdf', '.pfm', '.pgm', '.png', '.pnm', '.ppm', '.qoi', '.rgb', '.rgba', '.sgi', '.tga', '.tif', '.tiff', '.vda', '.vst', '.webp', '.xbm'],
+    '.gif': ['.apng', '.avif', '.avifs', '.bmp', '.bw', '.dds', '.dib', '.icb', '.icns', '.ico', '.im', '.jfif', '.jpe', '.jpeg', '.jpg', '.mpo', '.msp', '.pbm', '.pcx', '.pdf', '.pfm', '.pgm', '.png', '.pnm', '.ppm', '.qoi', '.rgb', '.rgba', '.sgi', '.tga', '.tif', '.tiff', '.vda', '.vst', '.webp', '.xbm'],
+    '.tif': ['.apng', '.avif', '.avifs', '.bmp', '.bw', '.dds', '.dib', '.gif', '.icb', '.icns', '.ico', '.im', '.j2c', '.j2k', '.jfif', '.jp2', '.jpc', '.jpe', '.jpeg', '.jpf', '.jpg', '.jpx', '.mpo', '.msp', '.pbm', '.pcx', '.pdf', '.pfm', '.pgm', '.png', '.pnm', '.ppm', '.qoi', '.rgb', '.rgba', '.sgi', '.tga', '.tif', '.vda', '.vst', '.webp', '.xbm'],
+    '.tiff': ['.apng', '.avif', '.avifs', '.bmp', '.bw', '.dds', '.dib', '.gif', '.icb', '.icns', '.ico', '.im', '.j2c', '.j2k', '.jfif', '.jp2', '.jpc', '.jpe', '.jpeg', '.jpf', '.jpg', '.jpx', '.mpo', '.msp', '.pbm', '.pcx', '.pdf', '.pfm', '.pgm', '.png', '.pnm', '.ppm', '.qoi', '.rgb', '.rgba', '.sgi', '.tga', '.tif', '.vda', '.vst', '.webp', '.xbm'],
+    '.webp': ['.apng', '.avif', '.avifs', '.bmp', '.bw', '.dds', '.dib', '.gif', '.icb', '.icns', '.ico', '.im', '.j2c', '.j2k', '.jfif', '.jp2', '.jpc', '.jpe', '.jpeg', '.jpf', '.jpg', '.jpx', '.mpo', '.msp', '.pbm', '.pcx', '.pdf', '.pfm', '.pgm', '.png', '.pnm', '.ppm', '.qoi', '.rgb', '.rgba', '.sgi', '.tga', '.tif', '.tiff', '.vda', '.vst', '.xbm'],
+    '.ico': ['.apng', '.avif', '.avifs', '.bmp', '.bw', '.dds', '.dib', '.gif', '.icb', '.icns', '.im', '.j2c', '.j2k', '.jfif', '.jp2', '.jpc', '.jpe', '.jpeg', '.jpf', '.jpg', '.jpx', '.mpo', '.msp', '.pbm', '.pcx', '.pdf', '.pfm', '.pgm', '.png', '.pnm', '.ppm', '.qoi', '.rgb', '.rgba', '.sgi', '.tga', '.tif', '.tiff', '.vda', '.vst', '.webp', '.xbm'],
+}
+IMAGE_OUTPUTS = sorted({ext for values in IMAGE_OUTPUTS_BY_SOURCE.values() for ext in values})
 
 
 @dataclass
@@ -223,7 +237,7 @@ class SuperConverter:
     def get_supported_outputs(self, input_path: Path) -> list[str]:
         suffix = input_path.suffix.lower()
         if self.is_image_file(input_path):
-            return [ext for ext in self.get_image_outputs() if ext != suffix]
+            return [ext for ext in self.get_image_outputs(suffix) if ext != suffix]
         if suffix in DOC_INPUTS:
             return [ext for ext in DOCUMENT_OUTPUTS if ext != suffix and self.can_convert_document(input_path, ext)]
         if suffix in VIDEO_INPUTS:
@@ -254,11 +268,52 @@ class SuperConverter:
         extensions.discard('.pdf')
         return sorted(common | extensions)
 
-    def get_image_outputs(self) -> list[str]:
-        return sorted(set(self.get_image_inputs()) | {'.pdf'})
+    def get_image_outputs(self, source_ext: str | None = None) -> list[str]:
+        if source_ext is None:
+            return IMAGE_OUTPUTS.copy()
+        return IMAGE_OUTPUTS_BY_SOURCE.get(source_ext.lower(), IMAGE_OUTPUTS).copy()
 
     def is_image_file(self, source: Path) -> bool:
         return source.suffix.lower() in self.get_image_inputs()
+
+    def get_image_save_format(self, target_ext: str) -> str | None:
+        # Pillow 允許同一種格式對應多個副檔名，這裡統一轉成實際的儲存格式名稱。
+        return {ext.lower(): fmt for ext, fmt in Image.registered_extensions().items()}.get(target_ext)
+
+    def prepare_image_for_target(self, img: Image.Image, target_ext: str) -> Image.Image:
+        # 不同圖片格式對色彩模式的要求差很多，先在這裡做集中整理，
+        # 可以把「其實格式支援、只是模式不相容」的失敗案例救回來。
+        if target_ext == '.pdf':
+            return img.convert('RGB') if img.mode != 'RGB' else img
+
+        if target_ext in {'.jpg', '.jpeg', '.jpe', '.jfif', '.mpo'}:
+            return img.convert('RGB') if img.mode != 'RGB' else img
+
+        if target_ext in {'.bmp', '.dib', '.pcx', '.dds', '.tga', '.icb', '.vda', '.vst'}:
+            return img.convert('RGB') if img.mode not in {'RGB', 'L'} else img
+
+        if target_ext in {'.pbm', '.xbm', '.msp'}:
+            return img.convert('1')
+
+        if target_ext in {'.bw', '.pgm'}:
+            return img.convert('L')
+
+        if target_ext in {'.ppm', '.pnm', '.pfm', '.rgb', '.sgi'}:
+            return img.convert('RGB') if img.mode != 'RGB' else img
+
+        if target_ext == '.rgba':
+            return img.convert('RGBA') if img.mode != 'RGBA' else img
+
+        if target_ext == '.palm':
+            return img.convert('P', palette=Image.Palette.ADAPTIVE)
+
+        if target_ext in {'.blp', '.qoi'}:
+            return img.convert('RGBA') if img.mode not in {'RGB', 'RGBA'} else img
+
+        if target_ext == '.gif':
+            return img.convert('P') if img.mode not in {'L', 'P'} else img
+
+        return img
 
     def convert(self, source: Path, target: Path, log: Callable[[str], None]) -> None:
         suffix = source.suffix.lower()
@@ -283,17 +338,18 @@ class SuperConverter:
         target_ext = target.suffix.lower()
         log(f'\u5716\u7247\u8f38\u51fa\u683c\u5f0f: {target_ext}')
         with Image.open(source) as img:
-            if target_ext in {'.jpg', '.jpeg'}:
-                if img.mode in ('RGBA', 'LA', 'P'):
-                    img = img.convert('RGB')
-                img.save(target, quality=95)
+            img = self.prepare_image_for_target(img, target_ext)
+            save_format = self.get_image_save_format(target_ext)
+
+            if target_ext in {'.jpg', '.jpeg', '.jpe', '.jfif'}:
+                img.save(target, format='JPEG', quality=95)
+            elif target_ext == '.mpo':
+                img.save(target, format='MPO', quality=95)
             elif target_ext == '.pdf':
-                if img.mode != 'RGB':
-                    img = img.convert('RGB')
                 img.save(target, 'PDF', resolution=100.0)
+            elif save_format is not None:
+                img.save(target, format=save_format)
             else:
-                if img.mode == 'RGBA' and target_ext in {'.bmp', '.jpg', '.jpeg'}:
-                    img = img.convert('RGB')
                 img.save(target)
         log('\u5716\u7247\u8f49\u6a94\u5b8c\u6210')
 
@@ -933,7 +989,6 @@ class App:
         self.output_dir_var = tk.StringVar(value=str(get_default_output_dir()))
         self.format_var = tk.StringVar()
         self.status_var = tk.StringVar(value='\u8acb\u5148\u9078\u64c7\u6a94\u6848\uff0c\u518d\u958b\u59cb\u8f49\u6a94')
-        self.drop_hint_var = tk.StringVar(value='\u53ef\u76f4\u63a5\u628a\u6a94\u6848\u62d6\u9032\u4e0b\u65b9\u6e05\u55ae')
         self.configure_styles()
         self.build_ui()
         self.enable_file_drop()
@@ -996,7 +1051,6 @@ class App:
         ttk.Button(toolbar, text='\u9078\u64c7\u6a94\u6848', command=self.pick_files, style='Accent.TButton').pack(side='left')
         ttk.Button(toolbar, text='\u6e05\u7a7a\u5217\u8868', command=self.clear_files).pack(side='left', padx=8)
         ttk.Button(toolbar, text='\u9078\u64c7\u8f38\u51fa\u8cc7\u6599\u593e', command=self.pick_output_dir).pack(side='left')
-        ttk.Label(toolbar, textvariable=self.drop_hint_var, style='Muted.TLabel').pack(side='right')
 
         options = ttk.LabelFrame(left, text='\u8f49\u6a94\u8a2d\u5b9a', padding=12, style='Section.TLabelframe')
         options.pack(fill='x', pady=(12, 12))
@@ -1206,7 +1260,9 @@ class App:
         self.progress_text_var.set(f'{current} / {total} ({percent:.0f}%)')
 
     def enable_file_drop(self) -> None:
-        self.drop_hint_var.set('\u62d6\u66f3\u52a0\u5165\u6a94\u6848\u529f\u80fd\u66ab\u6642\u95dc\u9589\uff0c\u8acb\u4f7f\u7528\u300c\u9078\u64c7\u6a94\u6848\u300d')
+        # 這裡先保留函式入口，之後若要重做拖曳功能可以直接接回。
+        # 先前的 Windows 拖曳掛鉤在打包版會造成不穩定，因此目前刻意停用。
+        return
 
     def _extract_drop_files(self, hdrop: int) -> list[Path]:
         count = self._shell32.DragQueryFileW(hdrop, 0xFFFFFFFF, None, 0)

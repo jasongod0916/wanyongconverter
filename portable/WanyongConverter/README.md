@@ -1,23 +1,51 @@
-# 萬用轉檔王 Portable
+# 萬用轉檔王
 
-這是萬用轉檔王的 portable 版本。
+萬用轉檔王是一套 Windows 攜帶式轉檔工具，目標是讓圖片、文件、影音轉檔都能在同一個介面完成，而且整包可以直接帶走，不必額外安裝成正式系統軟體。
 
-你不需要另外安裝這套軟體，只要保留整個資料夾，就可以直接在 Windows 電腦上使用。
+## 特色
 
-## 如何使用
+- 單一介面處理圖片、文件、影音轉檔
+- 提供 portable 版本，可直接整包複製到其他 Windows 電腦
+- 支援中文檔名與中文路徑
+- `docx -> pdf` 採雙模式
+  - 有 Microsoft Word：優先使用 Word，高還原輸出
+  - 沒有 Microsoft Word：自動改走 portable fallback 路線
+- 內含 `ffmpeg`、`pandoc`，不需要另外安裝這兩套工具才能使用 portable 版
 
-1. 開啟 `WanyongConverter.exe`
-2. 選擇要轉換的檔案
-3. 選擇輸出格式
-4. 開始轉檔
+## 快速開始
 
-## 重要提醒
+### 一般使用者
 
-- 請不要只單獨搬走 `WanyongConverter.exe`
-- 請保留整個 `WanyongConverter` 資料夾
-- `tools` 資料夾裡的工具是這個 portable 版本的一部分
+直接開啟：
 
-## 目前支援
+```text
+portable\WanyongConverter\WanyongConverter.exe
+```
+
+使用方式：
+
+1. 選擇要轉換的檔案
+2. 選擇輸出格式
+3. 開始批次轉檔
+4. 到輸出資料夾查看結果
+
+如果要分享給別人，請整個 `portable\WanyongConverter` 資料夾一起提供，不要只單獨拿 `exe`。
+
+### 開發者
+
+直接執行原始碼：
+
+```powershell
+python .\super_converter.py
+```
+
+或使用 GUI 啟動入口：
+
+```powershell
+python .\launch_super_converter.pyw
+```
+
+## 支援格式
 
 ### 圖片
 
@@ -35,8 +63,8 @@
 - `txt / md / html` 互轉
 - `docx / odt / rtf / epub / md / html / txt` 可透過 pandoc 互轉
 - `docx -> pdf`
-  - 有 Microsoft Word 時：優先使用 Word 進行高還原輸出
-  - 沒有 Microsoft Word 時：自動改走 portable fallback 路線
+  - 有 Word 時使用高還原模式
+  - 沒有 Word 時使用 portable fallback 模式
 - `doc -> pdf`
   - 需要 Microsoft Word
 
@@ -44,13 +72,55 @@
 
 - 透過 ffmpeg 支援常見影片與音訊格式互轉
 
-## 內含工具
+## 限制與說明
 
-- `tools\ffmpeg\ffmpeg.exe`
-- `tools\pandoc\pandoc.exe`
+- `doc -> pdf` 依賴 Microsoft Word，沒有 Word 的電腦無法走這條高還原路線
+- `docx -> pdf` 在沒有 Word 時仍可輸出 PDF，但版面不保證與原始 Word 完全一致
+- 這個 repo 內含 portable 成品與大型執行檔，clone 與下載體積會比較大
+
+## 核心工具
+
+- `ffmpeg`
+- `pandoc`
+- `pdf2docx`
+- `Microsoft Word`
+  - 只在 `doc/docx -> pdf` 的高還原模式下使用
+
+## 專案結構
+
+```text
+super_converter.py                主程式與轉檔邏輯
+launch_super_converter.pyw        Windows GUI 啟動入口
+build_portable.ps1                打包 portable 版本
+build_exe.ps1                     其他打包腳本
+tools\pandoc\pandoc.exe           打包使用的 pandoc
+portable\WanyongConverter\        已打包完成的 portable 成品
+```
+
+## 打包 portable
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build_portable.ps1
+```
+
+輸出位置：
+
+```text
+portable\WanyongConverter\
+```
+
+## portable 內容
+
+```text
+portable\WanyongConverter\WanyongConverter.exe
+portable\WanyongConverter\tools\ffmpeg\ffmpeg.exe
+portable\WanyongConverter\tools\pandoc\pandoc.exe
+```
 
 ## 移除方式
 
-這個版本不需要安裝。
+portable 版本不需要安裝。刪掉整個 `portable\WanyongConverter` 資料夾即可移除。
 
-如果你不想用了，直接刪掉整個 `WanyongConverter` 資料夾即可。
+## GitHub 備註
+
+這個 repo 為了保留完整 portable 成品，使用 Git LFS 追蹤大型 `pandoc.exe` 檔案。
