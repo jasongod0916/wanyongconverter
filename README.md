@@ -49,8 +49,52 @@ python .\launch_super_converter.pyw
 
 ### 圖片
 
-- 常見圖片格式互轉
-- 圖片轉 PDF
+- 目前實測來源格式：`png`、`jpg`、`bmp`、`gif`、`tiff`、`webp`、`ico`
+- 目前實測成功的圖片輸出格式：
+  - `apng`
+  - `avif`
+  - `avifs`
+  - `bmp`
+  - `bw`
+  - `dds`
+  - `dib`
+  - `gif`
+  - `icb`
+  - `icns`
+  - `ico`
+  - `im`
+  - `j2c`
+  - `j2k`
+  - `jfif`
+  - `jp2`
+  - `jpc`
+  - `jpe`
+  - `jpeg`
+  - `jpf`
+  - `jpg`
+  - `jpx`
+  - `mpo`
+  - `msp`
+  - `pbm`
+  - `pcx`
+  - `pdf`
+  - `pfm`
+  - `pgm`
+  - `png`
+  - `pnm`
+  - `ppm`
+  - `qoi`
+  - `rgb`
+  - `rgba`
+  - `sgi`
+  - `tga`
+  - `tif`
+  - `tiff`
+  - `vda`
+  - `vst`
+  - `webp`
+  - `xbm`
+- 以上圖片格式組合已完成本機矩陣測試，最近一次結果為 `288 / 288` 成功
 
 ### 文件
 
