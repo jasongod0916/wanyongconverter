@@ -125,7 +125,25 @@ python .\launch_super_converter.pyw
 
 ### 影音
 
-- 透過 ffmpeg 支援常見影片與音訊格式互轉
+- 目前實測影片來源格式：`avi`、`flv`、`mkv`、`mov`、`mp4`、`webm`、`wmv`
+- 目前實測音訊來源格式：`aac`、`flac`、`m4a`、`mp3`、`ogg`、`wav`
+- 目前實測成功的影音輸出格式：
+  - `mp4`
+  - `mov`
+  - `avi`
+  - `mkv`
+  - `webm`
+  - `flv`
+  - `wmv`
+  - `mp3`
+  - `wav`
+  - `aac`
+  - `flac`
+  - `ogg`
+  - `m4a`
+  - `gif`
+- 補充：`gif` 只會出現在有畫面的影片來源，不會出現在純音訊來源
+- 以上影音格式組合已完成本機矩陣測試，最近一次結果為 `163 / 163` 成功
 
 ## 限制與說明
 

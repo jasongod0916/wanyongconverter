@@ -55,6 +55,7 @@ VIDEO_INPUTS = {
     '.rmvb', '.asf', '.aiff', '.wma', '.opus', '.amr'
 }
 VIDEO_OUTPUTS = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.mp3', '.wav', '.aac', '.flac', '.ogg', '.m4a', '.gif']
+AUDIO_ONLY_INPUTS = {'.aac', '.aiff', '.amr', '.flac', '.m4a', '.mp3', '.ogg', '.opus', '.wav', '.wma'}
 PANDOC_OUTPUTS = {'.docx', '.odt', '.epub', '.rtf', '.html', '.txt', '.md'}
 DOCUMENT_OUTPUTS = sorted(PANDOC_OUTPUTS | {'.pdf'})
 # 這份表是根據目前本機圖片矩陣測試「實際成功」的組合整理出來的。
@@ -241,7 +242,12 @@ class SuperConverter:
         if suffix in DOC_INPUTS:
             return [ext for ext in DOCUMENT_OUTPUTS if ext != suffix and self.can_convert_document(input_path, ext)]
         if suffix in VIDEO_INPUTS:
-            return [ext for ext in VIDEO_OUTPUTS if ext != suffix] if self.tools.ffmpeg else []
+            if not self.tools.ffmpeg:
+                return []
+            outputs = [ext for ext in VIDEO_OUTPUTS if ext != suffix]
+            if suffix in AUDIO_ONLY_INPUTS:
+                outputs = [ext for ext in outputs if ext != '.gif']
+            return outputs
         return []
 
     def can_convert_document(self, src: Path, target_ext: str) -> bool:
