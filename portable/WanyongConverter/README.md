@@ -98,6 +98,7 @@ python .\launch_super_converter.pyw
 
 ### 文件
 
+- 目前實測來源格式：`doc`、`docbook`、`docx`、`epub`、`htm`、`html`、`latex`、`markdown`、`md`、`odt`、`org`、`pdf`、`rst`、`rtf`、`tex`、`txt`
 - `docx -> md`
 - `md -> docx`
 - `md -> pdf`
@@ -111,6 +112,16 @@ python .\launch_super_converter.pyw
   - 沒有 Word 時使用 portable fallback 模式
 - `doc -> pdf`
   - 需要 Microsoft Word
+- 目前實測成功的文件輸出格式：
+  - `docx`
+  - `epub`
+  - `html`
+  - `md`
+  - `odt`
+  - `pdf`
+  - `rtf`
+  - `txt`
+- 以上文件格式組合已完成本機矩陣測試，最近一次結果為 `109 / 109` 成功
 
 ### 影音
 
