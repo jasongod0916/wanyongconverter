@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd.tmp
+build/
+dist/
+*.spec
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+test_output/
+test_matrix/
+verify_*/
+portable_ascii_test/
+Thumbs.db
+Desktop.ini
