@@ -16,6 +16,8 @@
 
 ### 一般使用者
 
+建議直接從 GitHub `Releases` 下載 portable 壓縮包，再解壓縮後使用。
+
 直接開啟：
 
 ```text
@@ -30,6 +32,20 @@ portable\WanyongConverter\WanyongConverter.exe
 4. 到輸出資料夾查看結果
 
 如果要分享給別人，請整個 `portable\WanyongConverter` 資料夾一起提供，不要只單獨拿 `exe`。
+
+### Portable 下載
+
+GitHub 專案頁面：
+
+```text
+https://github.com/Jasongod0916/WanyongConverter
+```
+
+建議下載方式：
+
+1. 進入 `Releases`
+2. 下載 portable 壓縮包
+3. 解壓縮後直接執行 `WanyongConverter.exe`
 
 ### 開發者
 
