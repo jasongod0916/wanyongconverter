@@ -1,5 +1,6 @@
 import ctypes
 import html as html_lib
+import io
 import locale
 import re
 import shutil
@@ -32,6 +33,14 @@ try:
     import imageio_ffmpeg
 except Exception:
     imageio_ffmpeg = None
+
+try:
+    from svglib.svglib import svg2rlg
+    from reportlab.graphics import renderPDF, renderPM
+except Exception:
+    svg2rlg = None
+    renderPDF = None
+    renderPM = None
 
 try:
     from pdf2docx import Converter as PdfToDocxConverter
@@ -72,6 +81,8 @@ IMAGE_OUTPUTS_BY_SOURCE = {
     '.ico': ['.apng', '.avif', '.avifs', '.bmp', '.bw', '.dds', '.dib', '.gif', '.icb', '.icns', '.im', '.j2c', '.j2k', '.jfif', '.jp2', '.jpc', '.jpe', '.jpeg', '.jpf', '.jpg', '.jpx', '.mpo', '.msp', '.pbm', '.pcx', '.pdf', '.pfm', '.pgm', '.png', '.pnm', '.ppm', '.qoi', '.rgb', '.rgba', '.sgi', '.tga', '.tif', '.tiff', '.vda', '.vst', '.webp', '.xbm'],
 }
 IMAGE_OUTPUTS = sorted({ext for values in IMAGE_OUTPUTS_BY_SOURCE.values() for ext in values})
+SVG_INPUTS = {'.svg'}
+SVG_OUTPUTS = IMAGE_OUTPUTS.copy()
 
 
 @dataclass
@@ -272,11 +283,15 @@ class SuperConverter:
         common = {'.png', '.jpg', '.jpeg', '.webp', '.bmp', '.gif', '.tif', '.tiff', '.ico'}
         extensions = {ext.lower() for ext in Image.registered_extensions()}
         extensions.discard('.pdf')
+        if svg2rlg is not None and renderPM is not None and renderPDF is not None:
+            extensions.update(SVG_INPUTS)
         return sorted(common | extensions)
 
     def get_image_outputs(self, source_ext: str | None = None) -> list[str]:
         if source_ext is None:
             return IMAGE_OUTPUTS.copy()
+        if source_ext.lower() in SVG_INPUTS and svg2rlg is not None and renderPM is not None and renderPDF is not None:
+            return SVG_OUTPUTS.copy()
         return IMAGE_OUTPUTS_BY_SOURCE.get(source_ext.lower(), IMAGE_OUTPUTS).copy()
 
     def is_image_file(self, source: Path) -> bool:
@@ -321,6 +336,17 @@ class SuperConverter:
 
         return img
 
+    def render_svg_to_image(self, source: Path) -> Image.Image:
+        if svg2rlg is None or renderPM is None:
+            raise ConversionError('SVG conversion requires svglib and reportlab')
+        drawing = svg2rlg(str(source))
+        if drawing is None:
+            raise ConversionError('Unable to parse SVG content')
+        png_bytes = renderPM.drawToString(drawing, fmt='PNG')
+        image = Image.open(io.BytesIO(png_bytes))
+        image.load()
+        return image
+
     def convert(self, source: Path, target: Path, log: Callable[[str], None]) -> None:
         suffix = source.suffix.lower()
         log(f'\u958b\u59cb\u8655\u7406\u6a94\u6848: {source.name}')
@@ -341,10 +367,27 @@ class SuperConverter:
         raise ConversionError(f'\u4e0d\u652f\u63f4\u7684\u8f38\u5165\u683c\u5f0f: {suffix}')
 
     def convert_image(self, source: Path, target: Path, log: Callable[[str], None]) -> None:
+        source_ext = source.suffix.lower()
         target_ext = target.suffix.lower()
         log(f'\u5716\u7247\u8f38\u51fa\u683c\u5f0f: {target_ext}')
-        with Image.open(source) as img:
-            img = self.prepare_image_for_target(img, target_ext)
+        if source_ext in SVG_INPUTS:
+            if svg2rlg is None or renderPDF is None:
+                raise ConversionError('SVG conversion requires svglib and reportlab')
+            if target_ext == '.pdf':
+                drawing = svg2rlg(str(source))
+                if drawing is None:
+                    raise ConversionError('Unable to parse SVG content')
+                renderPDF.drawToFile(drawing, str(target))
+                log('\u5716\u7247\u8f49\u6a94\u5b8c\u6210')
+                return
+            working_image = self.render_svg_to_image(source)
+        else:
+            with Image.open(source) as source_image:
+                working_image = source_image.copy()
+
+        img = working_image
+        try:
+            img = self.prepare_image_for_target(working_image, target_ext)
             save_format = self.get_image_save_format(target_ext)
 
             if target_ext in {'.jpg', '.jpeg', '.jpe', '.jfif'}:
@@ -357,6 +400,10 @@ class SuperConverter:
                 img.save(target, format=save_format)
             else:
                 img.save(target)
+        finally:
+            working_image.close()
+            if img is not working_image:
+                img.close()
         log('\u5716\u7247\u8f49\u6a94\u5b8c\u6210')
 
     def convert_document(self, source: Path, target: Path, log: Callable[[str], None]) -> None:

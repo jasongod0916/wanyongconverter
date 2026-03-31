@@ -17,6 +17,19 @@ def noop_log(_: str) -> None:
 
 
 def make_source_image(ext: str, target: Path) -> None:
+    if ext == ".svg":
+        target.write_text(
+            """<svg xmlns="http://www.w3.org/2000/svg" width="96" height="64" viewBox="0 0 96 64">
+<rect width="96" height="64" fill="#1f5fbf" />
+<circle cx="22" cy="22" r="12" fill="#ffd166" />
+<rect x="42" y="14" width="40" height="12" rx="3" fill="#06d6a0" />
+<text x="42" y="40" font-size="12" font-family="Arial, sans-serif" fill="#ffffff">SVG</text>
+</svg>
+""",
+            encoding="utf-8",
+        )
+        return
+
     if ext == ".jpg":
         img = Image.new("RGB", (96, 64), color=(40, 120, 210))
         img.save(target, quality=95)
@@ -77,7 +90,7 @@ def verify_output(target_path: Path) -> None:
 
 def main() -> None:
     converter = SuperConverter()
-    source_exts = [".png", ".jpg", ".bmp", ".gif", ".tiff", ".webp", ".ico"]
+    source_exts = [".png", ".jpg", ".bmp", ".gif", ".tiff", ".webp", ".ico", ".svg"]
 
     results: list[dict] = []
     failures_by_target: dict[str, list[str]] = defaultdict(list)

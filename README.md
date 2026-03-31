@@ -51,7 +51,7 @@ python .\launch_super_converter.pyw
 
 ### 圖片
 
-- 目前實測來源格式：`png`、`jpg`、`bmp`、`gif`、`tiff`、`webp`、`ico`
+- 目前實測來源格式：`png`、`jpg`、`bmp`、`gif`、`tiff`、`webp`、`ico`、`svg`
 - 目前實測成功的圖片輸出格式：
   - `apng`
   - `avif`
@@ -96,7 +96,7 @@ python .\launch_super_converter.pyw
   - `vst`
   - `webp`
   - `xbm`
-- 以上圖片格式組合已完成本機矩陣測試，最近一次結果為 `288 / 288` 成功
+- 以上圖片格式組合已完成本機矩陣測試，最近一次結果為 `331 / 331` 成功
 
 ### 文件
 
