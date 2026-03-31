@@ -48,6 +48,11 @@ except Exception:
     PdfToDocxConverter = None
 
 try:
+    import fitz
+except Exception:
+    fitz = None
+
+try:
     import pythoncom
     import win32com.client as win32_client
 except Exception:
@@ -83,6 +88,7 @@ IMAGE_OUTPUTS_BY_SOURCE = {
 IMAGE_OUTPUTS = sorted({ext for values in IMAGE_OUTPUTS_BY_SOURCE.values() for ext in values})
 SVG_INPUTS = {'.svg'}
 SVG_OUTPUTS = IMAGE_OUTPUTS.copy()
+PDF_IMAGE_OUTPUTS = IMAGE_OUTPUTS.copy()
 
 
 @dataclass
@@ -250,6 +256,9 @@ class SuperConverter:
         suffix = input_path.suffix.lower()
         if self.is_image_file(input_path):
             return [ext for ext in self.get_image_outputs(suffix) if ext != suffix]
+        if suffix == '.pdf':
+            pdf_outputs = sorted(set(DOCUMENT_OUTPUTS) | set(PDF_IMAGE_OUTPUTS))
+            return [ext for ext in pdf_outputs if ext != suffix and self.can_convert_document(input_path, ext)]
         if suffix in DOC_INPUTS:
             return [ext for ext in DOCUMENT_OUTPUTS if ext != suffix and self.can_convert_document(input_path, ext)]
         if suffix in VIDEO_INPUTS:
@@ -275,6 +284,8 @@ class SuperConverter:
             return PdfToDocxConverter is not None
         if src_ext == '.pdf' and target_ext in {'.txt', '.md'}:
             return True
+        if src_ext == '.pdf' and target_ext in PDF_IMAGE_OUTPUTS:
+            return fitz is not None
         if src_ext in PANDOC_INPUTS and target_ext in PANDOC_OUTPUTS:
             return self.tools.pandoc
         return False
@@ -347,7 +358,21 @@ class SuperConverter:
         image.load()
         return image
 
-    def convert(self, source: Path, target: Path, log: Callable[[str], None]) -> None:
+    def save_image_output(self, img: Image.Image, target: Path) -> None:
+        target_ext = target.suffix.lower()
+        save_format = self.get_image_save_format(target_ext)
+        if target_ext in {'.jpg', '.jpeg', '.jpe', '.jfif'}:
+            img.save(target, format='JPEG', quality=95)
+        elif target_ext == '.mpo':
+            img.save(target, format='MPO', quality=95)
+        elif target_ext == '.pdf':
+            img.save(target, 'PDF', resolution=100.0)
+        elif save_format is not None:
+            img.save(target, format=save_format)
+        else:
+            img.save(target)
+
+    def convert(self, source: Path, target: Path, log: Callable[[str], None]) -> list[Path]:
         suffix = source.suffix.lower()
         log(f'\u958b\u59cb\u8655\u7406\u6a94\u6848: {source.name}')
         log(f'\u4f86\u6e90\u8def\u5f91: {source}')
@@ -355,15 +380,14 @@ class SuperConverter:
         if self.is_image_file(source):
             log('\u8f49\u6a94\u985e\u578b: \u5716\u7247')
             self.convert_image(source, target, log)
-            return
+            return [target]
         if suffix in DOC_INPUTS:
             log('\u8f49\u6a94\u985e\u578b: \u6587\u4ef6')
-            self.convert_document(source, target, log)
-            return
+            return self.convert_document(source, target, log)
         if suffix in VIDEO_INPUTS:
             log('\u8f49\u6a94\u985e\u578b: \u5f71\u97f3')
             self.convert_media(source, target, log)
-            return
+            return [target]
         raise ConversionError(f'\u4e0d\u652f\u63f4\u7684\u8f38\u5165\u683c\u5f0f: {suffix}')
 
     def convert_image(self, source: Path, target: Path, log: Callable[[str], None]) -> None:
@@ -388,56 +412,47 @@ class SuperConverter:
         img = working_image
         try:
             img = self.prepare_image_for_target(working_image, target_ext)
-            save_format = self.get_image_save_format(target_ext)
-
-            if target_ext in {'.jpg', '.jpeg', '.jpe', '.jfif'}:
-                img.save(target, format='JPEG', quality=95)
-            elif target_ext == '.mpo':
-                img.save(target, format='MPO', quality=95)
-            elif target_ext == '.pdf':
-                img.save(target, 'PDF', resolution=100.0)
-            elif save_format is not None:
-                img.save(target, format=save_format)
-            else:
-                img.save(target)
+            self.save_image_output(img, target)
         finally:
             working_image.close()
             if img is not working_image:
                 img.close()
         log('\u5716\u7247\u8f49\u6a94\u5b8c\u6210')
 
-    def convert_document(self, source: Path, target: Path, log: Callable[[str], None]) -> None:
+    def convert_document(self, source: Path, target: Path, log: Callable[[str], None]) -> list[Path]:
         src_ext = source.suffix.lower()
         dst_ext = target.suffix.lower()
         log(f'\u6587\u4ef6\u8f49\u6a94\u8def\u5f91: {src_ext} -> {dst_ext}')
         if src_ext in TEXT_INPUTS and dst_ext == '.pdf':
             self.convert_text_like(source, target, log)
-            return
+            return [target]
         if src_ext in WORD_INPUTS and dst_ext == '.pdf':
             log('\u50c5\u5728 DOC/DOCX -> PDF \u958b\u59cb\u8f49\u6a94\u6642\u6aa2\u67e5 Microsoft Word')
             if self.get_word_availability():
                 self.convert_word_to_pdf(source, target, log)
-                return
+                return [target]
             if src_ext in PANDOC_INPUTS:
                 log('\u672a\u5075\u6e2c\u5230 Microsoft Word\uff0c\u6539\u7528 portable PDF \u8def\u7dda')
                 self.convert_pandoc_to_pdf(source, target, log)
-                return
+                return [target]
             raise ConversionError('\u672a\u5075\u6e2c\u5230 Microsoft Word\uff0cDOC \u8f49 PDF \u9700\u8981 Word')
         if src_ext in PANDOC_INPUTS and dst_ext == '.pdf':
             self.convert_pandoc_to_pdf(source, target, log)
-            return
+            return [target]
         if src_ext == '.pdf' and dst_ext == '.docx':
             self.convert_pdf_to_docx(source, target, log)
-            return
+            return [target]
         if src_ext == '.pdf' and dst_ext == '.md':
             self.convert_pdf_to_markdown(source, target, log)
-            return
+            return [target]
         if src_ext == '.pdf' and dst_ext == '.txt':
             self.convert_pdf_to_text(source, target, log)
-            return
+            return [target]
+        if src_ext == '.pdf' and dst_ext in PDF_IMAGE_OUTPUTS:
+            return self.convert_pdf_to_image(source, target, log)
         if src_ext in PANDOC_INPUTS and dst_ext in PANDOC_OUTPUTS:
             self.convert_with_pandoc(source, target, log)
-            return
+            return [target]
         raise ConversionError(f'\u76ee\u524d\u7121\u6cd5\u8f49\u63db\u9019\u7d44\u6587\u4ef6\u683c\u5f0f: {src_ext} -> {dst_ext}')
 
     def convert_text_like(self, source: Path, target: Path, log: Callable[[str], None]) -> None:
@@ -620,6 +635,42 @@ class SuperConverter:
             content = "\n\n".join(page.extract_text() or '' for page in reader.pages)
         target.write_text(content, encoding='utf-8')
         log('PDF \u8f49 TXT \u5b8c\u6210')
+
+    def convert_pdf_to_image(self, source: Path, target: Path, log: Callable[[str], None]) -> list[Path]:
+        log('\u5c07 PDF \u6240\u6709\u9801\u9762\u6e32\u67d3\u70ba\u5716\u7247')
+        if fitz is None:
+            raise ConversionError('PDF to image conversion requires PyMuPDF')
+        outputs: list[Path] = []
+        document = fitz.open(str(source))
+        try:
+            page_count = document.page_count
+            if page_count == 0:
+                raise ConversionError('PDF has no pages')
+            if page_count == 1:
+                page_targets = [target]
+            else:
+                page_targets = [target.with_name(f'{target.stem}_page_{index + 1}{target.suffix.lower()}') for index in range(page_count)]
+            target_ext = target.suffix.lower()
+            for index in range(page_count):
+                page = document.load_page(index)
+                matrix = fitz.Matrix(2, 2)
+                pixmap = page.get_pixmap(matrix=matrix, alpha=True)
+                working_image = Image.open(io.BytesIO(pixmap.tobytes('png')))
+                working_image.load()
+                img = working_image
+                try:
+                    img = self.prepare_image_for_target(working_image, target_ext)
+                    self.save_image_output(img, page_targets[index])
+                    outputs.append(page_targets[index])
+                    log(f'PDF \u7b2c {index + 1} \u9801\u8f38\u51fa: {page_targets[index].name}')
+                finally:
+                    working_image.close()
+                    if img is not working_image:
+                        img.close()
+        finally:
+            document.close()
+        log(f'PDF \u8f49\u5716\u7247\u5b8c\u6210\uff0c\u5171\u7522\u751f {len(outputs)} \u500b\u6a94\u6848')
+        return outputs
 
     def convert_with_pandoc(self, source: Path, target: Path, log: Callable[[str], None]) -> None:
         if not self.tools.pandoc:
@@ -1298,8 +1349,11 @@ class App:
             target = output_dir / f'{source.stem}{target_ext}'
             try:
                 self.append_log(f'[{index}/{total}] \u6e96\u5099\u8f49\u63db {source.name}')
-                self.converter.convert(source, target, self.append_log)
-                self.append_log(f'[{index}/{total}] \u5b8c\u6210\uff0c\u8f38\u51fa\u6a94\u6848: {target}')
+                outputs = self.converter.convert(source, target, self.append_log)
+                if len(outputs) == 1:
+                    self.append_log(f'[{index}/{total}] \u5b8c\u6210\uff0c\u8f38\u51fa\u6a94\u6848: {outputs[0]}')
+                else:
+                    self.append_log(f'[{index}/{total}] \u5b8c\u6210\uff0c\u5171\u7522\u751f {len(outputs)} \u500b\u8f38\u51fa\u6a94\u6848')
                 success += 1
             except Exception as exc:
                 self.append_log(f'[\u5931\u6557] {source.name}: {exc}')

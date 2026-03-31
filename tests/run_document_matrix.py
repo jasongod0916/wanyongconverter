@@ -4,6 +4,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+from PIL import Image
 from pypdf import PdfReader
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -165,6 +166,16 @@ def verify_output(target_path: Path) -> None:
             names = set(archive.namelist())
             if "mimetype" not in names:
                 raise ValueError("epub output is missing mimetype")
+        return
+
+    if ext in {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff", ".webp", ".ico", ".apng", ".avif", ".avifs",
+               ".bw", ".dds", ".dib", ".icb", ".icns", ".im", ".j2c", ".j2k", ".jfif", ".jp2", ".jpc", ".jpe",
+               ".jpf", ".jpx", ".mpo", ".msp", ".pbm", ".pcx", ".pfm", ".pgm", ".pnm", ".ppm", ".qoi", ".rgb",
+               ".rgba", ".sgi", ".tga", ".vda", ".vst", ".xbm"}:
+        with Image.open(target_path) as img:
+            img.load()
+            if img.width <= 0 or img.height <= 0:
+                raise ValueError("image output has invalid size")
         return
 
     raise ValueError(f"no verifier implemented for {ext}")
