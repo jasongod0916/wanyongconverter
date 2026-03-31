@@ -62,49 +62,27 @@ python .\launch_super_converter.pyw
 ### 文件
 
 - 目前實測來源格式：`doc`、`docbook`、`docx`、`epub`、`htm`、`html`、`latex`、`markdown`、`md`、`odt`、`org`、`pdf`、`rst`、`rtf`、`tex`、`txt`
-- `docx -> md`
-- `md -> docx`
-- `md -> pdf`
-- `pdf -> md`
-- `pdf -> docx`
-- `pdf -> txt`
-- `txt / md / html` 互轉
-- `docx / odt / rtf / epub / md / html / txt` 可透過 pandoc 互轉
-- `docx -> pdf`
-  - 有 Word 時使用高還原模式
-  - 沒有 Word 時使用 portable fallback 模式
-- `doc -> pdf`
-  - 需要 Microsoft Word
+- 常用路線：`docx -> md`、`md -> docx`、`md -> pdf`、`pdf -> md`、`pdf -> docx`、`pdf -> txt`
+- 文字互轉：`txt / md / html`
+- pandoc 路線：`docx / odt / rtf / epub / md / html / txt` 可互轉
+- `docx -> pdf`：有 Word 時使用高還原模式，沒有 Word 時使用 portable fallback 模式
+- `doc -> pdf`：需要 Microsoft Word
+- `pdf -> 圖片`：會依頁數輸出多張圖片，支援所有圖片輸出格式
 - 目前實測成功的文件輸出格式：
-  - `docx`
-  - `epub`
-  - `html`
-  - `md`
-  - `odt`
-  - `pdf`
-  - `rtf`
-  - `txt`
-- 以上文件格式組合已完成本機矩陣測試，最近一次結果為 `109 / 109` 成功
+  `docx`, `epub`, `html`, `md`, `odt`, `pdf`, `rtf`, `txt`
+  `apng`, `avif`, `avifs`, `bmp`, `bw`, `dds`, `dib`, `gif`, `icb`, `icns`, `ico`, `im`
+  `j2c`, `j2k`, `jfif`, `jp2`, `jpc`, `jpe`, `jpeg`, `jpf`, `jpg`, `jpx`, `mpo`, `msp`
+  `pbm`, `pcx`, `pfm`, `pgm`, `png`, `pnm`, `ppm`, `qoi`, `rgb`, `rgba`, `sgi`
+  `tga`, `tif`, `tiff`, `vda`, `vst`, `webp`, `xbm`
+- 以上文件格式組合已完成本機矩陣測試，最近一次結果為 `151 / 151` 成功
 
 ### 影音
 
 - 目前實測影片來源格式：`avi`、`flv`、`mkv`、`mov`、`mp4`、`webm`、`wmv`
 - 目前實測音訊來源格式：`aac`、`flac`、`m4a`、`mp3`、`ogg`、`wav`
 - 目前實測成功的影音輸出格式：
-  - `mp4`
-  - `mov`
-  - `avi`
-  - `mkv`
-  - `webm`
-  - `flv`
-  - `wmv`
-  - `mp3`
-  - `wav`
-  - `aac`
-  - `flac`
-  - `ogg`
-  - `m4a`
-  - `gif`
+  `mp4`, `mov`, `avi`, `mkv`, `webm`, `flv`, `wmv`
+  `mp3`, `wav`, `aac`, `flac`, `ogg`, `m4a`, `gif`
 - 補充：`gif` 只會出現在有畫面的影片來源，不會出現在純音訊來源
 - 以上影音格式組合已完成本機矩陣測試，最近一次結果為 `163 / 163` 成功
 
